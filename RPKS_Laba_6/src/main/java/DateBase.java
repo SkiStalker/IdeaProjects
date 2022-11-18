@@ -1,4 +1,3 @@
-import au.com.bytecode.opencsv.CSVReader;
 import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
@@ -20,7 +19,6 @@ public class DateBase {
     }
 
     private void loadDateBase(String path) {
-        CSVReader reader;
         try {
             dbs.put(FilenameUtils.removeExtension(path), new TableParser(path).parse());
             dbsLastModified.add(new File(path).lastModified());
@@ -31,7 +29,7 @@ public class DateBase {
         }
     }
 
-    public void loadDateBases(String... dbFiles) {
+    public void loadTables(String... dbFiles) {
         for (String path : dbFiles) {
             loadDateBase(path);
         }
@@ -102,7 +100,7 @@ public class DateBase {
         String[] resTableColumns = resTable.getAllColumns();
 
         Arrays.sort(resTableColumns);
-        String[] groupByMergeRelations = (String[]) groupByRelations.stream()
+        String[] groupByMergeRelations = groupByRelations.stream()
                 .map((item) -> "%s.%s".formatted(item.getLeft(), item.getRight())).toList().toArray(new String[0]);
 
         Arrays.sort(groupByMergeRelations);
@@ -172,13 +170,11 @@ public class DateBase {
             } else {
                 List<Pair<String, String>> selectRelation = checkRelations(
                         Arrays.stream(query.getSelect()).map(Pair::getLeft).collect(Collectors.toList()), activeTables);
-                selectRelation.forEach((item) -> {
-                    resTableColumns.add(new Pair<>("%s.%s".formatted(item.getLeft(), item.getRight()),
-                            activeTables.get(item.getLeft()).getColumnType(item.getRight())));
-                });
+                selectRelation.forEach((item) -> resTableColumns.add(new Pair<>("%s.%s".formatted(item.getLeft(), item.getRight()),
+                        activeTables.get(item.getLeft()).getColumnType(item.getRight()))));
             }
 
-            List<String> relatedTables = null;
+            List<String> relatedTables;
             if (query.getWhere() != null) {
                 relatedTables = query.getWhere().resolveFields(activeTables);
                 if (relatedTables.size() != activeTables.size()) {
